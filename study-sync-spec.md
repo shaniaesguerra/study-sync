@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "Create a project specification for StudySync, a collaborative study planner for university students that unifies group scheduling, course resources, and task progress tracking."
 
+# Members:
+  - Shania Arvie Esguerra
+  - Travis Abuton
+  - Kasagga Frank
+  - Nephi Asha
+
 ## Project Overview
 
 ### Description
