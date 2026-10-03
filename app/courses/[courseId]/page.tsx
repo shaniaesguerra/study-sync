@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 
 import type { ResourceView } from "@/lib/types";
 
+import TasksSection from "./tasks-section";
+
 interface CourseDetail {
   id: string;
   name: string;
@@ -395,6 +397,8 @@ export default function CourseHubPage({
           {notice.text}
         </p>
       )}
+
+      <TasksSection courseId={courseId} members={course.members} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Add a resource</h2>
