@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getSessionUser } from "@/lib/auth";
-import { connectDB, Course as CourseModel, newId, Resource as ResourceModel, toCourse } from "@/lib/mongo";
+import { listCourseViews } from "@/lib/courses";
+import { connectDB, Course as CourseModel, newId, toCourse } from "@/lib/mongo";
 import type { CourseDoc } from "@/lib/mongo";
 import type { Role } from "@/lib/types";
 
@@ -13,30 +14,7 @@ export async function GET() {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  await connectDB();
-  const courses = await CourseModel.find({ "members.userId": user.id }).lean();
-  const resourceCounts = await ResourceModel.aggregate<{ _id: string; count: number }>([
-    { $group: { _id: "$courseId", count: { $sum: 1 } } },
-  ]);
-  const countByCourse = new Map(resourceCounts.map((r) => [r._id, r.count]));
-
-  const myCourses = courses
-    .map((c) => {
-      const course = toCourse(c);
-      const membership = course.members.find((m) => m.userId === user.id)!;
-      return {
-        id: course.id,
-        name: course.name,
-        description: course.description,
-        color: course.color,
-        role: membership.role,
-        resourceCount: countByCourse.get(course.id) ?? 0,
-        createdAt: course.createdAt,
-      };
-    })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-  return NextResponse.json({ courses: myCourses });
+  return NextResponse.json({ courses: await listCourseViews(user.id) });
 }
 
 export async function POST(request: Request) {

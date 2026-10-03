@@ -1,37 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StudySync
+
+A collaborative study planner: one course hub per course, with shared resources, files, and group membership.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Authentication
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sign-in is handled by [Auth.js v5](https://authjs.dev) with **OAuth only** — there is no password in the
+database. Sessions are stored in a signed JWT cookie, so no session table is needed.
 
-## Learn More
+| File | Purpose |
+| --- | --- |
+| `auth.config.ts` | Config shared by the app and `proxy.ts` (no database imports) |
+| `auth.ts` | Auth.js setup: Google + GitHub providers, JWT callbacks |
+| `proxy.ts` | Redirects unauthenticated visitors of `/courses/*` to the sign-in screen |
+| `lib/users.ts` | Finds or creates the MongoDB `User` for the OAuth profile, keyed on email |
+| `lib/auth.ts` | `getSessionUser()` — resolves the Auth.js session to a MongoDB user |
+| `app/api/auth/[...nextauth]/route.ts` | Auth.js route handler (`/api/auth/*`) |
 
-To learn more about Next.js, take a look at the following resources:
+Existing users keep their courses and resources: the first OAuth sign-in matches the account by email,
+so the MongoDB user id (and therefore every `ownerId`, `member.userId`, and `createdById`) stays the same.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. Create an OAuth app per provider
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set the callback URL to `http://localhost:3000/` for local development:
 
-## Deploy on Vercel
+- **Google** — [Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+  → *Create credentials → OAuth client ID → Web application*.
+- **GitHub** — [Settings → Developer settings → OAuth Apps](https://github.com/settings/developers)
+  → *New OAuth App*, with the homepage URL set to `http://localhost:3000`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 2. Fill in `.env`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-more
+```bash
+npx auth secret   # generates AUTH_SECRET
+```
+
+```sh
+AUTH_SECRET=<generated>
+AUTH_GOOGLE_ID=<from Google>
+AUTH_GOOGLE_SECRET=<from Google>
+AUTH_GITHUB_ID=<from GitHub>
+AUTH_GITHUB_SECRET=<from GitHub>
+```
+
+`AUTH_TRUST_HOST=true` lets Auth.js trust the host header outside of Vercel. On Vercel it is set
+automatically. `NEXT_PUBLIC_SITE_URL` is only used to build absolute URLs for metadata,
+`robots.txt`, and `sitemap.xml`.
+
+## Metadata
+
+- `app/layout.tsx` — site-wide title template, description, keywords, Open Graph, and Twitter tags.
+- `app/opengraph-image.tsx` — generated 1200×630 social preview image.
+- `app/courses/[courseId]/layout.tsx` — `generateMetadata()` builds a title and description from the
+  course, but only for members; everyone else gets a generic, `noindex` title.
+- `app/robots.ts` and `app/sitemap.ts` — file-based metadata conventions.
+
+## Scripts
+
+```bash
+npm run dev     # start the dev server
+npm run build   # production build
+npm run lint    # ESLint
+```

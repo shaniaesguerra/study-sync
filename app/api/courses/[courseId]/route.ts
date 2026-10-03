@@ -47,6 +47,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/courses/[course
       myRole: course.members.find((m) => m.userId === user.id)?.role ?? null,
       members,
       resourceCount,
+      taskSummary: course.taskSummary,
     },
   });
 }

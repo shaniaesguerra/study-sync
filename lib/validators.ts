@@ -90,6 +90,50 @@ export const TITLE_MAX_LENGTH = 120;
 export const DESCRIPTION_MAX_LENGTH = 1000;
 export const TAGS_MAX = 10;
 
+export const TASK_TITLE_MAX_LENGTH = 120;
+export const TASK_DESCRIPTION_MAX_LENGTH = 2000;
+export const TASK_STATUSES = ["not-started", "in-progress", "completed"] as const;
+
+export function isTaskStatus(value: string): boolean {
+  return (TASK_STATUSES as readonly string[]).includes(value);
+}
+
+export function isValidDueDate(value: string): boolean {
+  if (value === "") return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+export function validateTaskFields({
+  title,
+  description,
+  dueDate,
+}: {
+  title: string;
+  description: string;
+  dueDate: string;
+}): string[] {
+  const errors: string[] = [];
+  if (!title) {
+    errors.push("A task title is required.");
+  } else if (title.length > TASK_TITLE_MAX_LENGTH) {
+    errors.push(`Title must be ${TASK_TITLE_MAX_LENGTH} characters or fewer.`);
+  }
+  if (description.length > TASK_DESCRIPTION_MAX_LENGTH) {
+    errors.push(`Description must be ${TASK_DESCRIPTION_MAX_LENGTH} characters or fewer.`);
+  }
+  if (!isValidDueDate(dueDate)) {
+    errors.push("Due date must be a valid date in YYYY-MM-DD format.");
+  }
+  return errors;
+}
+
 export function parseTags(input: string): string[] {
   return input
     .split(",")
